@@ -1,0 +1,6 @@
+# Placeholder matching configuration.
+# Update after feature and validation design.
+
+method: baseline_rules
+threshold: 0.80
+random_seed: 42

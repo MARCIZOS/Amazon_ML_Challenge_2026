@@ -1,0 +1,11 @@
+# Placeholder blocking configuration.
+# Update after inspecting the actual dataset schema.
+
+passes:
+  - exact_name
+  - token_name
+  - name_country
+  - name_address
+
+deduplicate_pairs: true
+max_candidates_per_entity: null

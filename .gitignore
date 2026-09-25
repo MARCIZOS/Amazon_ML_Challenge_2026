@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Data and generated artifacts
+data/raw/*
+data/interim/*
+data/processed/*
+output/generated/*
+models/*
+experiments/results/*
+
+# Keep directory placeholders
+!.gitkeep
