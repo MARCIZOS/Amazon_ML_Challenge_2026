@@ -1,0 +1,22 @@
+paths:
+  reference: data/reference
+  sources: data/sources
+  output: output
+
+preprocessing:
+  normalization_version: v1
+
+blocking:
+  passes:
+    - exact_name
+    - name_country
+    - name_address
+  max_candidates_per_entity: null
+
+matching:
+  method: baseline_rules
+  threshold: 0.80
+
+runtime:
+  random_seed: 42
+  n_jobs: 1
