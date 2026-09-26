@@ -34,10 +34,32 @@ Run tests:
 python -m pytest -q
 ```
 
-Run the pipeline after the dataset schema and implementation are finalized:
+Run the pipeline: see *Full pipeline* below.
+
+## Full pipeline (all members)
+
+Running it on another machine: see [`RUN_ME_FIRST.md`](RUN_ME_FIRST.md).
+
+See [`docs/PIPELINE.md`](docs/PIPELINE.md). Short version:
 
 ```bash
-python -m src.pipeline
+pip install -r requirements.txt
+python -m src.preprocessing.preprocess --data-dir <DATASET_DIR>   # once
+python -m src.pipeline                                          # indexes -> train -> predict -> submission v1
+python -m src.make_submission --variant 2                       # v2..v5 in seconds
+```
+
+Outputs: `output/matching_results.tsv`, `output/candidate_pairs.tsv` (validated), reports in
+`experiments/results/<exp_id>/`.
+
+## Preprocessing (Member 2)
+
+Data loading, EDA, normalisation and blocking-key analysis: see
+[`docs/PREPROCESSING.md`](docs/PREPROCESSING.md), [`docs/EDA_REPORT.md`](docs/EDA_REPORT.md)
+and [`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md).
+
+```bash
+python -m src.preprocessing.preprocess --data-dir <DATASET_DIR>   # -> data/processed/*.parquet
 ```
 
 ## Team ownership
