@@ -1,0 +1,64 @@
+{
+ "exp_id": "M20260927_1454",
+ "one_to_one": true,
+ "min_keep_prob": 0.02,
+ "best": {
+  "threshold": 0.6,
+  "relative": 0.7
+ },
+ "variants": [
+  {
+   "name": "v1_best",
+   "threshold": 0.6,
+   "relative": 0.7,
+   "valid_macro_f05": 0.9305113265526137,
+   "valid_precision": 0.9861392513974543,
+   "valid_recall": 0.8563523128241713
+  },
+  {
+   "name": "v2_stricter",
+   "threshold": 0.65,
+   "relative": 0.7,
+   "valid_macro_f05": 0.9305045887696278,
+   "valid_precision": 0.9864795805003778,
+   "valid_recall": 0.8560534485085707
+  },
+  {
+   "name": "v3_looser",
+   "threshold": 0.55,
+   "relative": 0.7,
+   "valid_macro_f05": 0.9297277662141238,
+   "valid_precision": 0.9851626128871406,
+   "valid_recall": 0.8571235755741087
+  },
+  {
+   "name": "v4_rel",
+   "threshold": 0.6,
+   "relative": 0.5,
+   "valid_macro_f05": 0.9298093548722502,
+   "valid_precision": 0.9811131027849429,
+   "valid_recall": 0.8653953685671866
+  },
+  {
+   "name": "v5_precision",
+   "threshold": 0.7,
+   "relative": 0.7,
+   "valid_macro_f05": 0.9301659999815798,
+   "valid_precision": 0.9866646655326907,
+   "valid_recall": 0.8556147928195438
+  }
+ ],
+ "blocking": {
+  "keys": {
+   "name_skel_pair": 1000,
+   "name_first": 500,
+   "name_prefix5": 500,
+   "num_street": 500,
+   "state_name_skel": 1000,
+   "addr_tokens": 200
+  },
+  "pre_k": 100,
+  "top_k": 40,
+  "s1_chunk": 50000
+ }
+}

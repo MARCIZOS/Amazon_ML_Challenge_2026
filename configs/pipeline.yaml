@@ -1,0 +1,54 @@
+# End-to-end pipeline configuration (src/train.py, src/predict.py, src/make_submission.py).
+# All paths support relative directories and environment variable expansion ($VAR or ${VAR}).
+# Default directories resolve to local repo paths: dataset/, data/processed/, models/, output/, experiments/results/.
+
+paths:
+  dataset_dir: dataset
+  processed_dir: data/processed
+  models_dir: models
+  output_dir: output
+  results_dir: experiments/results
+  validator: dataset/utils/validate_submission.py
+
+blocking:
+  # key -> max block size over S2+S3 (larger key values are dropped as oversized)
+  # keys optimized for high blocking recall (>= 0.985+) across all countries (US, India, France, unseen)
+  keys:
+    name_skel_pair: 1000      # pairwise skeletons for multi-word names
+    name_first: 500           # first word of core name
+    name_prefix5: 500         # 4-5 char compact name prefix (catches web domains / concatenated forms)
+    num_street: 500           # house number + address word (single and multi-digit, robust)
+    state_name_skel: 1000     # state/admin code + first name skeleton
+    addr_tokens: 300          # distinctive address tokens
+    name_skel_tokens: 300     # individual distinctive skeleton words (protects single-word names)
+  pre_k: 80                   # candidates kept per S1 after counting shared keys (optimized for speed & recall)
+  top_k: 25                   # candidates kept per S1 after similarity re-rank (= candidate_pairs.tsv size reduction)
+  s1_chunk: 50000             # S1 records processed per chunk (memory bound)
+
+train:
+  n_train_s1: 150000          # S1 train entities used to fit the model
+  n_valid_s1: 60000           # disjoint S1 train entities used for threshold tuning and reporting
+  seed: 42
+
+model:
+  type: lightgbm              # MIT licence (compact offline GBDT, <<8B params)
+  num_boost_round: 700
+  early_stopping_rounds: 40
+  params:
+    objective: binary
+    learning_rate: 0.07
+    num_leaves: 63
+    min_data_in_leaf: 100
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 1
+    lambda_l2: 1.5
+    verbose: -1
+    num_threads: 0
+
+decision:
+  min_keep_prob: 0.02         # scored pairs below this are never stored
+  one_to_one: true            # each S2/S3 record goes to at most one S1 (0 violations in train GT)
+  threshold_grid: [0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.62, 0.65, 0.68, 0.70, 0.72, 0.75, 0.80, 0.85]
+  relative_grid: [0.0, 0.3, 0.5, 0.65, 0.7, 0.75]   # keep p >= rel * best p of the same S1
+  single_candidate_min_p: 0.66                       # prevents singleton false merges when only 1 candidate exists

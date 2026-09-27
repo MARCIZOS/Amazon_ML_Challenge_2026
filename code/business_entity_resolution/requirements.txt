@@ -1,0 +1,19 @@
+# Core Data Processing and I/O
+pandas==2.2.2
+numpy==1.26.4
+pyarrow==16.1.0
+pyyaml==6.0.1
+tqdm==4.66.4
+
+# High-Performance String Matching and Machine Learning
+rapidfuzz==3.9.3
+lightgbm==4.3.0
+scikit-learn==1.5.0
+
+# Multilingual Text Transliteration & Normalization
+anyascii==0.3.2
+unidecode==1.3.8
+
+# Testing and Benchmarking
+pytest==8.2.2
+psutil==5.9.8

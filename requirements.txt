@@ -1,0 +1,16 @@
+pandas
+numpy
+scikit-learn
+rapidfuzz
+pyyaml
+pytest
+jupyter
+pyarrow
+lightgbm
+anyascii
+tqdm
+unidecode
+# benchmark only (src/io/benchmark.py)
+psutil
+polars
+duckdb

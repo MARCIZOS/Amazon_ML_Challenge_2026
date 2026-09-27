@@ -1,0 +1,177 @@
+{
+ "exp_id": "M20260927_1454",
+ "date": "2026-09-27T15:09:38",
+ "git_commit": "6e487eb",
+ "config": {
+  "paths": {
+   "dataset_dir": "C:\\Users\\aryan\\Videos\\6ab10eb3b23ba_student_resource\\student_resource\\dataset",
+   "processed_dir": "data/processed",
+   "models_dir": "models",
+   "output_dir": "output",
+   "results_dir": "experiments/results",
+   "validator": "C:\\Users\\aryan\\Videos\\6ab10eb3b23ba_student_resource\\student_resource\\utils\\validate_submission.py"
+  },
+  "blocking": {
+   "keys": {
+    "name_skel_pair": 1000,
+    "name_first": 500,
+    "name_prefix5": 500,
+    "num_street": 500,
+    "state_name_skel": 1000,
+    "addr_tokens": 200
+   },
+   "pre_k": 100,
+   "top_k": 40,
+   "s1_chunk": 50000
+  },
+  "train": {
+   "n_train_s1": 150000,
+   "n_valid_s1": 60000,
+   "seed": 42
+  },
+  "model": {
+   "type": "lightgbm",
+   "num_boost_round": 600,
+   "early_stopping_rounds": 40,
+   "gpu_vendor": "NVIDIA",
+   "params": {
+    "objective": "binary",
+    "learning_rate": 0.08,
+    "num_leaves": 63,
+    "min_data_in_leaf": 100,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 1,
+    "lambda_l2": 1.0,
+    "verbose": -1,
+    "num_threads": 0,
+    "device_type": "gpu",
+    "gpu_platform_id": -1,
+    "gpu_device_id": -1
+   }
+  },
+  "decision": {
+   "min_keep_prob": 0.02,
+   "one_to_one": true,
+   "threshold_grid": [
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.93,
+    0.95,
+    0.97
+   ],
+   "relative_grid": [
+    0.0,
+    0.3,
+    0.5,
+    0.7
+   ]
+  }
+ },
+ "n_fit_s1": 150000,
+ "n_valid_s1": 60000,
+ "fit_pairs": 5881871,
+ "fit_positive": 472447,
+ "blocking_valid": {
+  "blocking_recall": 0.9143368104428976,
+  "true_pairs": 207452,
+  "true_pairs_in_candidates": 189681,
+  "candidate_pairs": 2351837,
+  "candidates_per_s1_mean": 39.19728333333333,
+  "candidates_per_s1_max": 40,
+  "s1_without_candidates": 84,
+  "reduction_ratio": 0.9999962018942298
+ },
+ "valid_at_best": {
+  "n_s1": 60000,
+  "macro_f05": 0.9305113265526137,
+  "macro_f05_singletons": 0.9305974652987327,
+  "macro_f05_non_singletons": 0.9305062906741843,
+  "singleton_share": 0.055233333333333336,
+  "pairs_pred": 180149,
+  "pairs_true": 207452,
+  "pairs_tp": 177652,
+  "micro_precision": 0.9861392513974543,
+  "micro_recall": 0.8563523128241713,
+  "macro_precision": 0.9843676921309421,
+  "macro_recall": 0.8575317109787702,
+  "false_merges_on_singletons": 230
+ },
+ "valid_ceiling_if_perfect_matcher": {
+  "n_s1": 60000,
+  "macro_f05": 0.9647397820101088,
+  "macro_f05_singletons": 1.0,
+  "macro_f05_non_singletons": 0.9626783847970668,
+  "singleton_share": 0.055233333333333336,
+  "pairs_pred": 189681,
+  "pairs_true": 207452,
+  "pairs_tp": 189681,
+  "micro_precision": 1.0,
+  "micro_recall": 0.9143368104428976,
+  "macro_precision": 1.0,
+  "macro_recall": 0.9137812479969275,
+  "false_merges_on_singletons": 0
+ },
+ "best_decision": {
+  "threshold": 0.6,
+  "relative": 0.7
+ },
+ "variants": [
+  {
+   "name": "v1_best",
+   "threshold": 0.6,
+   "relative": 0.7,
+   "valid_macro_f05": 0.9305113265526137,
+   "valid_precision": 0.9861392513974543,
+   "valid_recall": 0.8563523128241713
+  },
+  {
+   "name": "v2_stricter",
+   "threshold": 0.65,
+   "relative": 0.7,
+   "valid_macro_f05": 0.9305045887696278,
+   "valid_precision": 0.9864795805003778,
+   "valid_recall": 0.8560534485085707
+  },
+  {
+   "name": "v3_looser",
+   "threshold": 0.55,
+   "relative": 0.7,
+   "valid_macro_f05": 0.9297277662141238,
+   "valid_precision": 0.9851626128871406,
+   "valid_recall": 0.8571235755741087
+  },
+  {
+   "name": "v4_rel",
+   "threshold": 0.6,
+   "relative": 0.5,
+   "valid_macro_f05": 0.9298093548722502,
+   "valid_precision": 0.9811131027849429,
+   "valid_recall": 0.8653953685671866
+  },
+  {
+   "name": "v5_precision",
+   "threshold": 0.7,
+   "relative": 0.7,
+   "valid_macro_f05": 0.9301659999815798,
+   "valid_precision": 0.9866646655326907,
+   "valid_recall": 0.8556147928195438
+  }
+ ],
+ "runtime_seconds": 894,
+ "peak_memory_mb": 9384.62890625,
+ "best_iteration": 600
+}
