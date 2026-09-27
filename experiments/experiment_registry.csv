@@ -1,1 +1,2 @@
 experiment_id,date,owner,git_commit,normalization_version,blocking_strategy,feature_version,model,threshold,candidate_count,mean_candidates,max_candidates,candidate_recall,reduction_ratio,runtime_seconds,peak_memory_mb,matching_metric,decision,notes
+P001,2026-09-26,Member 2,,v2 (src/preprocessing/normalize.py),,,,,,,,,,1134,,"name tset of true pairs 0.849->0.925; Indian-script names 0.146->0.826 (held-out EDA sample)",adopt,"Full preprocessing of 24.2M train+test rows to data/processed (11 workers); translit vocab learned on 1.24M pairs"

@@ -1,0 +1,198 @@
+"""Generate configs/lexicons.json.
+
+The lexicons are plain static word lists (legal forms, street abbreviations,
+state / region names). They are written by hand from general knowledge and the
+training data - no external lookup service is used at any point.
+
+Run from the project root:  python scripts/build_lexicons.py
+"""
+import json
+import os
+
+# ---------------------------------------------------------------- names
+# legal-form tokens -> canonical legal token. Everything in here is removed from
+# name_core and collected into name_legal.
+LEGAL = {
+    # US / generic
+    "inc": "inc", "incorporated": "inc", "incorporation": "inc",
+    "llc": "llc", "llp": "llp", "lp": "lp", "pllc": "pllc", "plc": "plc",
+    "ltd": "ltd", "limited": "ltd", "lltd": "ltd",
+    "corp": "corp", "corporation": "corp", "co": "co", "company": "co", "cos": "co",
+    "pc": "pc", "pa": "pa", "lc": "lc", "pty": "pty", "gmbh": "gmbh",
+    # India
+    "pvt": "pvt", "private": "pvt", "pvtltd": "pvt ltd", "opc": "opc",
+    # France
+    "sarl": "sarl", "sas": "sas", "sasu": "sasu", "eurl": "eurl", "sa": "sa",
+    "sci": "sci", "snc": "snc", "ei": "ei", "eirl": "eirl", "scop": "scop",
+    "selarl": "selarl", "scm": "scm", "scp": "scp", "gie": "gie", "sca": "sca",
+}
+# multi-token legal forms (joined with spaces, matched after punctuation removal)
+LEGAL_MULTI = {
+    "l l c": "llc", "l l p": "llp", "p c": "pc", "p a": "pa", "s a": "sa",
+    "pvt ltd": "pvt ltd", "p ltd": "pvt ltd", "pte ltd": "pte ltd",
+    "s a r l": "sarl", "s a s": "sas",
+}
+# words that are noise when they appear in a business name (removed from name_core)
+NAME_STOP = ["and", "of", "the", "et", "de", "la", "le", "les", "du", "des", "a",
+             "m s", "ms", "mr", "mrs", "smt", "messrs"]
+# country words sometimes injected into names: removed from name_core only
+NAME_COUNTRY_WORDS = ["india", "indian", "france", "usa", "us", "america"]
+# trade-name markers: in the data the REAL name is always AFTER the marker,
+# the text before it is a random brand. Order matters (longest first).
+TRADE_MARKERS = ["d/b/a", "d.b.a.", "dba:", "dba", "t/a", "trading as", "aka",
+                 "a.k.a.", "née", "nee", "formerly"]
+# abbreviation expansions inside names (applied token-wise, after lowercasing)
+NAME_ABBR = {
+    "intl": "international", "int'l": "international", "mfg": "manufacturing",
+    "assoc": "associates", "assocs": "associates", "bros": "brothers",
+    "svc": "services", "svcs": "services", "tech": "technologies",
+    "techs": "technologies", "mgmt": "management", "mgt": "management",
+    "natl": "national", "dept": "department", "univ": "university",
+    "hosp": "hospital", "ctr": "center", "centre": "center", "cntr": "center",
+    "grp": "group", "hldgs": "holdings", "ind": "industries", "inds": "industries",
+    "ent": "enterprises", "ents": "enterprises", "sys": "systems",
+    "ets": "etablissements", "etab": "etablissements",
+}
+
+# ---------------------------------------------------------------- addresses
+# canonical SHORT forms for street-type words (both directions map to one token)
+ADDR_ABBR = {
+    "street": "st", "st": "st", "str": "st", "strt": "st", "saint": "st", "ste": "suite",
+    "road": "rd", "rd": "rd", "rode": "rd",
+    "avenue": "ave", "ave": "ave", "av": "ave", "aven": "ave", "avn": "ave",
+    "drive": "dr", "dr": "dr", "drv": "dr",
+    "lane": "ln", "ln": "ln",
+    "boulevard": "blvd", "blvd": "blvd", "bd": "blvd", "boul": "blvd", "bvd": "blvd",
+    "circle": "cir", "cir": "cir", "crcl": "cir",
+    "court": "ct", "ct": "ct", "crt": "ct",
+    "place": "pl", "pl": "pl", "plc": "pl",
+    "highway": "hwy", "hwy": "hwy", "hiway": "hwy",
+    "parkway": "pkwy", "pkwy": "pkwy",
+    "terrace": "ter", "ter": "ter", "terr": "ter",
+    "square": "sq", "sq": "sq",
+    "suite": "suite", "ste.": "suite", "apartment": "apt", "apt": "apt", "appt": "apt",
+    "apartments": "apts", "apts": "apts",
+    "floor": "fl", "flr": "fl", "fl": "fl",
+    "building": "bldg", "bldg": "bldg", "bldng": "bldg",
+    "north": "n", "south": "s", "east": "e", "west": "w",
+    "northeast": "ne", "northwest": "nw", "southeast": "se", "southwest": "sw",
+    "mount": "mt", "mt": "mt", "fort": "ft", "ft": "ft",
+    "near": "near", "nr": "near", "opposite": "opp", "opp": "opp",
+    "behind": "behind", "beside": "beside",
+    "sector": "sec", "sec": "sec", "colony": "col", "col": "col",
+    "nagar": "nagar", "ngr": "nagar", "marg": "marg",
+    "society": "soc", "soc": "soc", "complex": "cmplx", "cmplx": "cmplx",
+    # French
+    "rue": "rue", "r": "rue", "route": "rte", "rte": "rte", "chemin": "chem",
+    "ch": "chem", "chem": "chem", "impasse": "imp", "imp": "imp", "allee": "allee",
+    "all": "allee", "cours": "cours", "cour": "cours", "quai": "quai", "qu": "quai",
+    "faubourg": "fbg", "fbg": "fbg", "residence": "res", "res": "res",
+    "lieu-dit": "ld", "lieudit": "ld", "ld": "ld", "bis": "bis", "ter.": "ter",
+}
+# tokens that carry no location information
+ADDR_STOP = ["no", "number", "num", "nos", "door", "dor", "h", "hno", "house",
+             "city", "of", "town", "township", "village", "the", "and", "unit",
+             "dist", "district", "taluk", "tehsil", "po", "post", "via", "de", "du",
+             "la", "le", "les", "des", "d", "l", "et", "cedex", "bis"]
+# values that mean "missing"
+PLACEHOLDERS = ["null", "<null>", "n/a", "na", "nan", "none", "nil", "-", "--",
+                "unknown", "not available", "<na>", "undefined", "n.a.", "xx", "xxx"]
+
+# ---------------------------------------------------------------- states / regions
+US_STATES = {
+    "al": "alabama", "ak": "alaska", "az": "arizona", "ar": "arkansas",
+    "ca": "california", "co": "colorado", "ct": "connecticut", "de": "delaware",
+    "dc": "district of columbia", "fl": "florida", "ga": "georgia", "hi": "hawaii",
+    "id": "idaho", "il": "illinois", "in": "indiana", "ia": "iowa", "ks": "kansas",
+    "ky": "kentucky", "la": "louisiana", "me": "maine", "md": "maryland",
+    "ma": "massachusetts", "mi": "michigan", "mn": "minnesota", "ms": "mississippi",
+    "mo": "missouri", "mt": "montana", "ne": "nebraska", "nv": "nevada",
+    "nh": "new hampshire", "nj": "new jersey", "nm": "new mexico", "ny": "new york",
+    "nc": "north carolina", "nd": "north dakota", "oh": "ohio", "ok": "oklahoma",
+    "or": "oregon", "pa": "pennsylvania", "ri": "rhode island", "sc": "south carolina",
+    "sd": "south dakota", "tn": "tennessee", "tx": "texas", "ut": "utah",
+    "vt": "vermont", "va": "virginia", "wa": "washington", "wv": "west virginia",
+    "wi": "wisconsin", "wy": "wyoming", "pr": "puerto rico",
+}
+IN_STATES = {
+    "ap": ["andhra pradesh"], "ar": ["arunachal pradesh"], "as": ["assam"],
+    "br": ["bihar"], "cg": ["chhattisgarh", "chattisgarh", "ct"], "ga": ["goa"],
+    "gj": ["gujarat"], "hr": ["haryana"], "hp": ["himachal pradesh"],
+    "jh": ["jharkhand"], "ka": ["karnataka"], "kl": ["kerala"],
+    "mp": ["madhya pradesh"], "mh": ["maharashtra"], "mn": ["manipur"],
+    "ml": ["meghalaya"], "mz": ["mizoram"], "nl": ["nagaland"],
+    "od": ["odisha", "orissa", "or"], "pb": ["punjab"], "rj": ["rajasthan"],
+    "sk": ["sikkim"], "tn": ["tamil nadu", "tamilnadu"],
+    "ts": ["telangana", "tg"], "tr": ["tripura"],
+    "up": ["uttar pradesh"], "uk": ["uttarakhand", "uttaranchal", "ut"],
+    "wb": ["west bengal"], "dl": ["delhi", "new delhi", "nct of delhi"],
+    "jk": ["jammu and kashmir", "jammu & kashmir", "jammu kashmir"],
+    "la": ["ladakh"], "ch": ["chandigarh"], "py": ["puducherry", "pondicherry"],
+    "an": ["andaman and nicobar islands"], "dn": ["dadra and nagar haveli"],
+    "dd": ["daman and diu"], "ld": ["lakshadweep"],
+}
+# France: region code -> region names, and department names -> region code
+FR_REGIONS = {
+    "ara": ["auvergne-rhone-alpes", "auvergne rhone alpes"],
+    "bfc": ["bourgogne-franche-comte", "bourgogne franche comte"],
+    "bre": ["bretagne", "brittany"],
+    "cvl": ["centre-val de loire", "centre val de loire"],
+    "cor": ["corse", "corsica"],
+    "ges": ["grand est", "grand-est"],
+    "hdf": ["hauts-de-france", "hauts de france"],
+    "idf": ["ile-de-france", "ile de france"],
+    "nor": ["normandie", "normandy"],
+    "naq": ["nouvelle-aquitaine", "nouvelle aquitaine"],
+    "occ": ["occitanie"],
+    "pdl": ["pays de la loire", "pays-de-la-loire"],
+    "pac": ["provence-alpes-cote d'azur", "provence alpes cote d azur", "paca",
+            "provence-alpes-cote dazur"],
+}
+FR_DEPARTMENTS = {
+    "ara": ["ain", "allier", "ardeche", "cantal", "drome", "isere", "loire",
+            "haute-loire", "puy-de-dome", "rhone", "savoie", "haute-savoie"],
+    "bfc": ["cote-d'or", "doubs", "jura", "nievre", "haute-saone", "saone-et-loire",
+            "yonne", "territoire de belfort"],
+    "bre": ["cotes-d'armor", "finistere", "ille-et-vilaine", "morbihan"],
+    "cvl": ["cher", "eure-et-loir", "indre", "indre-et-loire", "loir-et-cher", "loiret"],
+    "cor": ["corse-du-sud", "haute-corse"],
+    "ges": ["ardennes", "aube", "marne", "haute-marne", "meurthe-et-moselle", "meuse",
+            "moselle", "bas-rhin", "haut-rhin", "vosges"],
+    "hdf": ["aisne", "nord", "oise", "pas-de-calais", "somme"],
+    "idf": ["paris", "seine-et-marne", "yvelines", "essonne", "hauts-de-seine",
+            "seine-saint-denis", "val-de-marne", "val-d'oise"],
+    "nor": ["calvados", "eure", "manche", "orne", "seine-maritime"],
+    "naq": ["charente", "charente-maritime", "correze", "creuse", "dordogne", "gironde",
+            "landes", "lot-et-garonne", "pyrenees-atlantiques", "deux-sevres", "vienne",
+            "haute-vienne"],
+    "occ": ["ariege", "aude", "aveyron", "gard", "haute-garonne", "gers", "herault",
+            "lot", "lozere", "hautes-pyrenees", "pyrenees-orientales", "tarn",
+            "tarn-et-garonne"],
+    "pdl": ["loire-atlantique", "maine-et-loire", "mayenne", "sarthe", "vendee"],
+    "pac": ["alpes-de-haute-provence", "hautes-alpes", "alpes-maritimes",
+            "bouches-du-rhone", "var", "vaucluse"],
+}
+COUNTRY_WORDS = ["india", "usa", "us", "united states", "united states of america",
+                 "france", "republique francaise"]
+
+
+def main():
+    here = os.path.dirname(os.path.abspath(__file__))
+    out = os.path.join(here, "..", "configs", "lexicons.json")
+    data = {
+        "_comment": "Static word lists used by src/preprocessing/normalize.py. "
+                    "Generated by scripts/build_lexicons.py - edit there.",
+        "legal": LEGAL, "legal_multi": LEGAL_MULTI, "name_stop": NAME_STOP,
+        "name_country_words": NAME_COUNTRY_WORDS, "trade_markers": TRADE_MARKERS,
+        "name_abbr": NAME_ABBR, "addr_abbr": ADDR_ABBR, "addr_stop": ADDR_STOP,
+        "placeholders": PLACEHOLDERS, "us_states": US_STATES, "in_states": IN_STATES,
+        "fr_regions": FR_REGIONS, "fr_departments": FR_DEPARTMENTS,
+        "country_words": COUNTRY_WORDS,
+    }
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=1, ensure_ascii=False)
+    print("wrote", os.path.normpath(out))
+
+
+if __name__ == "__main__":
+    main()

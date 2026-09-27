@@ -1,0 +1,52 @@
+# End-to-end pipeline configuration (src/train.py, src/predict.py, src/make_submission.py).
+# Every value here is recorded in the experiment report, so change values here, not in code.
+
+paths:
+  dataset_dir: C:\Users\kusha\Downloads\6ab10eb3b23ba_student_resource\student_resource\dataset
+  # already produced on this laptop by src.preprocessing.preprocess (24.2M rows); on another machine
+  # either copy that folder here or re-run preprocess and point this at data/processed
+  processed_dir: C:\Users\kusha\Downloads\6ab10eb3b23ba_student_resource\student_resource\processed
+  models_dir: models
+  output_dir: output
+  results_dir: experiments/results
+  validator: C:\Users\kusha\Downloads\6ab10eb3b23ba_student_resource\student_resource\utils\validate_submission.py
+
+blocking:
+  # key -> max block size over S2+S3 (larger key values are dropped as oversized)
+  keys:
+    name_skel_pair: 1000
+    name_first: 500
+    name_prefix5: 500
+    num_street: 500
+    state_name_skel: 1000
+    addr_tokens: 200
+  pre_k: 100          # candidates kept per S1 after counting shared keys
+  top_k: 40           # candidates kept per S1 after the cheap similarity re-rank (= candidate_pairs.tsv)
+  s1_chunk: 50000     # S1 records processed per chunk (memory bound)
+
+train:
+  n_train_s1: 150000  # S1 train entities used to fit the model
+  n_valid_s1: 60000   # disjoint S1 train entities used for threshold tuning and reporting
+  seed: 42
+
+model:
+  type: lightgbm      # MIT licence
+  num_boost_round: 600
+  early_stopping_rounds: 40
+  params:
+    objective: binary
+    learning_rate: 0.08
+    num_leaves: 63
+    min_data_in_leaf: 100
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 1
+    lambda_l2: 1.0
+    verbose: -1
+    num_threads: 0
+
+decision:
+  min_keep_prob: 0.02            # scored pairs below this are never stored
+  one_to_one: true               # each S2/S3 record goes to at most one S1 (0 violations in train GT)
+  threshold_grid: [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.93, 0.95, 0.97]
+  relative_grid: [0.0, 0.3, 0.5, 0.7]   # keep p >= rel * best p of the same S1
